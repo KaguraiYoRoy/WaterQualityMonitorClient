@@ -30,12 +30,10 @@ void* CronTimer(void*) {
     return 0;
 }
 
-void* UploadTimer(void*)
-{
+void* UploadTimer(void*) {
     return 0;
 }
 
-void* CommandProcesser(void*)
-{
+void* CommandProcesser(void*) {
     return 0;
 }
