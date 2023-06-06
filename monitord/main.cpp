@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <assert.h>
 
 #include <wiringPi.h>
 #include <wiringSerial.h>
@@ -16,14 +17,17 @@
 #include "clipp.h"
 
 Log Logger;
-pthread_t tCronTimer, tUploadTimer, tCommandProcesser;
+pthread_t tUploadTimer, tCommandProcesser;
 std::string Configfile, Logfile;
+std::string URLCron, URLUpload;
+std::string Token, UA;
 bool isExit;
 
 static void SigHandler(int sig);
-void* CronTimer(void*);
 void* UploadTimer(void*);
 void* CommandProcesser(void*);
+
+size_t curl_default_callback(const char* ptr, size_t size, size_t nmemb, std::string* stream);
 
 int main(int argc, char* argv[]) {
     Logfile = "";
@@ -57,18 +61,42 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    UA = JsonConfigRoot.isMember("UA") ? JsonConfigRoot["UA"].asString() : "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor";
+
     Logger.OpenFile(Logfile);
     Logger.WriteLog(INFO, "Water Quality MonitorDaemon starting...");
 
     signal(SIGINT, SigHandler);
     isExit = false;
 
-    pthread_create(&tCronTimer, NULL, CronTimer, NULL);
     pthread_create(&tUploadTimer, NULL, UploadTimer, NULL);
     pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
+    CURL* mCurl = curl_easy_init();
+    CURLcode CurlRes;
+    std::string szbuffer;
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_easy_setopt(mCurl, CURLOPT_USERAGENT, UA.c_str());
+    curl_easy_setopt(mCurl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(mCurl, CURLOPT_CAINFO, "cacert.pem");
+    curl_easy_setopt(mCurl, CURLOPT_MAXREDIRS, 5);
+    curl_easy_setopt(mCurl, CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(mCurl, CURLOPT_TIMEOUT, 30L);
+    curl_easy_setopt(mCurl, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(mCurl, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, curl_default_callback);
+    curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
+
+    while (!isExit) {
+
+        sleep(10);
+    }
+
     Logger.WriteLog(INFO, "Program exiting. Please wait...");
 
+    pthread_join(tUploadTimer, nullptr);
+    pthread_join(tCommandProcesser, nullptr);
+    
     Logger.Close();
     return 0;
 }
@@ -85,14 +113,6 @@ static void SigHandler(int sig) {
     }
 }
 
-void* CronTimer(void*) {
-    while (!isExit) {
-
-        sleep(10);
-    }
-    return 0;
-}
-
 void* UploadTimer(void*) {
     while (!isExit) {
 
@@ -105,4 +125,11 @@ void* CommandProcesser(void*) {
 
     }
     return 0;
+}
+
+size_t curl_default_callback(const char* ptr, size_t size, size_t nmemb, std::string* stream) {
+    assert(stream != NULL);
+    size_t len = size * nmemb;
+    stream->append(ptr, len);
+    return len;
 }

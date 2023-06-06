@@ -84,6 +84,7 @@
     <ClInclude Include="Log.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cacert.pem" />
     <None Include="ConfigSample.json" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
