@@ -80,46 +80,50 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlockQueue.h" />
+    <ClInclude Include="clipp.h" />
     <ClInclude Include="Log.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ConfigSample.json" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <Link>
-      <LibraryDependencies>pthread;wiringPi;jsoncpp</LibraryDependencies>
+      <LibraryDependencies>pthread;wiringPi;jsoncpp;curl</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
