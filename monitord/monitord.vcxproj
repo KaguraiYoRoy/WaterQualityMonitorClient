@@ -75,7 +75,6 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="BlockQueue.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
