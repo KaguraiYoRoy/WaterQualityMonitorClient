@@ -1,17 +1,20 @@
 ﻿#include <cstdio>
 #include <stdio.h>
 #include <string.h>
-#include <wiringPi.h>
-#include <wiringSerial.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
 
+#include <wiringPi.h>
+#include <wiringSerial.h>
+#include <json/json.h>
+
 #include "Log.h"
 #include "BlockQueue.h"
 
 Log Logger;
+pthread_t tCronTimer, tUploadTimer, tCommandProcesser;
 
 bool isExit;
 
@@ -27,7 +30,9 @@ int main() {
     signal(SIGINT, SigHandler);
     isExit = false;
 
-    while (!isExit);
+    pthread_create(&tCronTimer, NULL, CronTimer, NULL);
+    pthread_create(&tUploadTimer, NULL, UploadTimer, NULL);
+    pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
     Logger.WriteLog(INFO, "Program exiting. Please wait...");
 
@@ -50,6 +55,7 @@ static void SigHandler(int sig) {
 void* CronTimer(void*) {
     while (!isExit) {
 
+        sleep(10);
     }
     return 0;
 }
