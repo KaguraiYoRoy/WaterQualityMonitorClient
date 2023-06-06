@@ -20,7 +20,6 @@ private:
 
 public:
 	Log();
-	~Log();
 	void OpenFile(std::string FileName);
 	void Close();
 	void WriteLog(int Level, std::string Log);

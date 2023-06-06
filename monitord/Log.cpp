@@ -1,11 +1,7 @@
 #include "Log.h"
 
 Log::Log() {
-	this->isWriteFile = false;
-}
-
-Log::~Log() {
-	this->LogFileStream.close();
+	isWriteFile = false;
 }
 
 std::string Log::GetTime()
