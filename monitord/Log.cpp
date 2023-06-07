@@ -86,6 +86,8 @@ void Log::Close() {
 	if(isWriteFile)
 		LogFileStream.close();
 	isExit = true;
+	WriteLog(INFO, "Exit.");
+	pthread_join(tWriterThread, nullptr);
 }
 
 void Log::WriteLog(int Level, std::string LogStr) {
