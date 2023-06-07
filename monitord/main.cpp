@@ -13,8 +13,10 @@
 #include <json/json.h>
 
 #include "Log.h"
-#include "BlockQueue.h"
 #include "clipp.h"
+
+#define DEFAULT_UA          "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor"
+#define DEFAULT_INTERVAL    1800
 
 Log Logger;
 pthread_t tUploadTimer, tCommandProcesser;
@@ -22,10 +24,18 @@ std::string Configfile, Logfile;
 std::string URLCron, URLUpload;
 std::string Token, UA;
 bool isExit;
+int SerialFd;
+int Interval;
+
+struct _SENSORS_DATA {
+    double WaterTemp, LM35, PH, Turbidity;
+    int TDS;
+}SensorsData;
 
 static void SigHandler(int sig);
 void* UploadTimer(void*);
 void* CommandProcesser(void*);
+std::string ReadSerial(std::string puts);
 
 size_t curl_default_callback(const char* ptr, size_t size, size_t nmemb, std::string* stream);
 
@@ -61,7 +71,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    UA = JsonConfigRoot.isMember("UA") ? JsonConfigRoot["UA"].asString() : "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor";
+    if (!JsonConfigRoot.isMember("Token")) {
+        std::cout << "FATAL: \"Token\" doesn't set in Config File!\nHave you logged in yet?" << std::endl;
+        return 0;
+    }
+    Token = JsonConfigRoot["Token"].asString();
+
+    UA = JsonConfigRoot.isMember("UA") ? JsonConfigRoot["UA"].asString() : DEFAULT_UA;
+    Interval = JsonConfigRoot.isMember("Interval") ? JsonConfigRoot["Interval"].asInt() : DEFAULT_INTERVAL;
 
     Logger.OpenFile(Logfile);
     Logger.WriteLog(INFO, "Water Quality MonitorDaemon starting...");
@@ -72,9 +89,14 @@ int main(int argc, char* argv[]) {
     pthread_create(&tUploadTimer, NULL, UploadTimer, NULL);
     pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
+    SerialFd = serialOpen("/dev/ttyS5", 115200);
+
+    Json::Value JsonCronRoot;
     CURL* mCurl = curl_easy_init();
     CURLcode CurlRes;
-    std::string szbuffer;
+    std::string szbuffer, strSerialData;
+    char bufferPost[1024];
+    bool isGetSensorsSuccess;
     curl_global_init(CURL_GLOBAL_ALL);
     curl_easy_setopt(mCurl, CURLOPT_USERAGENT, UA.c_str());
     curl_easy_setopt(mCurl, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -86,18 +108,50 @@ int main(int argc, char* argv[]) {
     curl_easy_setopt(mCurl, CURLOPT_FAILONERROR, 1L);
     curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, curl_default_callback);
     curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
+    curl_easy_setopt(mCurl, CURLOPT_URL, URLCron.c_str());
+    curl_easy_setopt(mCurl, CURLOPT_POST, 1L);
 
     while (!isExit) {
-
         sleep(10);
+
+        szbuffer = "";
+        strSerialData = ReadSerial("g");
+        isGetSensorsSuccess = true;
+
+        if (!JsonReader.parse(strSerialData.c_str(), JsonCronRoot)) {
+            Logger.WriteLog(ERROR, "Failed to get sensors data!");
+            isGetSensorsSuccess = false;
+        }
+        else {
+            Logger.WriteLog(INFO, "Read Sensors data:" + strSerialData);
+            SensorsData.WaterTemp = JsonConfigRoot["Values"]["WaterTemp"].asDouble();
+            SensorsData.TDS = JsonConfigRoot["Values"]["TDS"].asInt();
+            SensorsData.LM35 = JsonConfigRoot["Values"]["LM35"].asDouble();
+            SensorsData.PH = JsonConfigRoot["Values"]["PH"].asDouble();
+            SensorsData.Turbidity = JsonConfigRoot["Values"]["Turbidity"].asDouble();
+        }
+
+        sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, bufferPost);
+        CurlRes = curl_easy_perform(mCurl);
+        if (CurlRes != CURLE_OK) {
+            Logger.WriteLog(ERROR, "Failed to get cron task!");
+            continue;
+        }
+        if (!JsonReader.parse(szbuffer, JsonCronRoot)) {
+            Logger.WriteLog(ERROR, "Remote information parse error!");
+            continue;
+        }
     }
 
     Logger.WriteLog(INFO, "Program exiting. Please wait...");
 
+    Logger.Close();
+
     pthread_join(tUploadTimer, nullptr);
     pthread_join(tCommandProcesser, nullptr);
-    
-    Logger.Close();
+
     return 0;
 }
 
@@ -114,8 +168,43 @@ static void SigHandler(int sig) {
 }
 
 void* UploadTimer(void*) {
-    while (!isExit) {
+    int ElapsedTime = 0;
+    char bufferPost[1024];
+    std::string szbuffer;
+    CURL* mCurl = curl_easy_init();
+    CURLcode CurlRes;
+    curl_easy_setopt(mCurl, CURLOPT_USERAGENT, UA.c_str());
+    curl_easy_setopt(mCurl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(mCurl, CURLOPT_CAINFO, "cacert.pem");
+    curl_easy_setopt(mCurl, CURLOPT_MAXREDIRS, 5);
+    curl_easy_setopt(mCurl, CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(mCurl, CURLOPT_TIMEOUT, 30L);
+    curl_easy_setopt(mCurl, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(mCurl, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, curl_default_callback);
+    curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
+    curl_easy_setopt(mCurl, CURLOPT_URL, URLUpload.c_str());
+    curl_easy_setopt(mCurl, CURLOPT_POST, 1L);
 
+    while (!isExit) {
+        sleep(10);
+        ElapsedTime += 10;
+        if (ElapsedTime < Interval)
+            continue;
+        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f", Token.c_str(),
+            SensorsData.WaterTemp,
+            SensorsData.TDS,
+            SensorsData.LM35,
+            SensorsData.PH,
+            SensorsData.Turbidity);
+
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, bufferPost);
+        CurlRes = curl_easy_perform(mCurl);
+        if (CurlRes != CURLE_OK) {
+            Logger.WriteLog(ERROR, "Upload Failed!");
+            continue;
+        }
     }
     return 0;
 }
@@ -132,4 +221,16 @@ size_t curl_default_callback(const char* ptr, size_t size, size_t nmemb, std::st
     size_t len = size * nmemb;
     stream->append(ptr, len);
     return len;
+}
+
+std::string ReadSerial(std::string puts) {
+    serialPuts(SerialFd, puts.c_str());
+    std::string result;
+    while (serialDataAvail(SerialFd)) {
+        char ch = serialGetchar(SerialFd);
+        if(ch != '\n')
+            result += ch;
+    }
+        
+    return result;
 }
