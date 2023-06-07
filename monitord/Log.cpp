@@ -1,7 +1,9 @@
 #include "Log.h"
 
 Log::Log() {
+	isExit = false;
 	isWriteFile = false;
+	pthread_create(&tWriterThread, NULL, WriterThread, this);
 }
 
 std::string Log::GetTime()
@@ -33,6 +35,39 @@ int Log::MoveOldLog(int index) {
 	return sum + 1;
 }
 
+void* Log::WriterThread(void* vParam)
+{
+	LogData data;
+	Log* pClass = (Log*)vParam;
+	while (!pClass->isExit) {
+		data = pClass->LogQueue.Take();
+		char levelchar;
+		char Buffer[1024];
+		switch (data.Level) {
+		case INFO: {
+			levelchar = 'I';
+			break;
+		}
+		case WARN: {
+			levelchar = 'W';
+			break;
+		}
+		case ERROR: {
+			levelchar = 'E';
+			break;
+		}
+		case FATAL: {
+			levelchar = 'F';
+			break;
+		}
+		}
+		sprintf(Buffer, "[%s][%c]:%s\n", data.Time.c_str(), levelchar, data.Str.c_str());
+		if (pClass->isWriteFile)pClass->LogFileStream << Buffer;
+		std::cout << Buffer;
+	}
+	return nullptr;
+}
+
 void Log::OpenFile(std::string FileName) {
 	int nExistLog = 0;
 	isWriteFile = true;
@@ -48,32 +83,11 @@ void Log::OpenFile(std::string FileName) {
 }
 
 void Log::Close() {
-	LogFileStream.close();
+	if(isWriteFile)
+		LogFileStream.close();
+	isExit = true;
 }
 
-void Log::WriteLog(int Level, std::string Log) {
-	char levelchar;
-	char Buffer[1024];
-	switch (Level) {
-	case INFO: {
-		levelchar = 'I';
-		break;
-	}
-	case WARN: {
-		levelchar = 'W';
-		break;
-	}
-	case ERROR: {
-		levelchar = 'E';
-		break;
-	}
-	case FATAL: {
-		levelchar = 'F';
-		break;
-	}
-	}
-	sprintf(Buffer, "[%s][%c]:%s\n", GetTime().c_str(), levelchar, Log.c_str());
-	if(isWriteFile)LogFileStream << Buffer;
-	std::cout << Buffer;
-	return;
+void Log::WriteLog(int Level, std::string LogStr) {
+	LogQueue.Put({ GetTime(),LogStr,Level });
 }

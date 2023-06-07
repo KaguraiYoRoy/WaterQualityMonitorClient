@@ -4,19 +4,30 @@
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
+#include <pthread.h>
+
+#include "BlockQueue.h"
 
 enum LogLevel {
 	INFO,WARN,ERROR,FATAL
 };
 
+struct LogData {
+	std::string Time, Str;
+	int Level;
+};
+
 class Log
 {
 private:
+	BlockQueue<LogData> LogQueue;
+	pthread_t tWriterThread;
 	std::ofstream LogFileStream;
 	std::string LogFileName;
-	bool isWriteFile;
+	bool isWriteFile, isExit;
 	std::string GetTime();
 	int MoveOldLog(int index);
+	static void* WriterThread(void* vParam);
 
 public:
 	Log();
