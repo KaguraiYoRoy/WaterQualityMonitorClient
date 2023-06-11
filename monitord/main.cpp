@@ -18,6 +18,7 @@
 
 #define DEFAULT_UA          "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor"
 #define DEFAULT_INTERVAL    1800
+#define DEFAULT_USE_OLED    true
 
 Log Logger;
 DisplayOled Disp;
@@ -25,7 +26,7 @@ pthread_t tUploadTimer, tCommandProcesser;
 std::string Configfile, Logfile;
 std::string URLCron, URLUpload;
 std::string Token, UA;
-bool isExit;
+bool isExit, useOled;
 int SerialFd;
 int Interval;
 
@@ -85,6 +86,7 @@ int main(int argc, char* argv[]) {
 
     UA = JsonConfigRoot.isMember("UA") ? JsonConfigRoot["UA"].asString() : DEFAULT_UA;
     Interval = JsonConfigRoot.isMember("Interval") ? JsonConfigRoot["Interval"].asInt() : DEFAULT_INTERVAL;
+    useOled = JsonConfigRoot.isMember("UseOled") ? JsonConfigRoot["UseOled"].asBool() : DEFAULT_USE_OLED;
 
     Logger.OpenFile(Logfile);
     Logger.WriteLog(INFO, "Water Quality MonitorDaemon starting...");
@@ -96,7 +98,8 @@ int main(int argc, char* argv[]) {
     pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
     SerialFd = serialOpen("/dev/ttyS5", 115200);
-    Disp.Init("/dev/i2c-3");
+    if(useOled)
+        Disp.Init("/dev/i2c-3");
 
     Json::Value JsonCronRoot;
     CURL* mCurl = curl_easy_init();
@@ -136,7 +139,8 @@ int main(int argc, char* argv[]) {
             SensorsData.LM35 = JsonCronRoot["Values"]["LM35"].asDouble();
             SensorsData.PH = JsonCronRoot["Values"]["PH"].asDouble();
             SensorsData.Turbidity = JsonCronRoot["Values"]["Turbidity"].asDouble();
-            Disp.UpdateData(SensorsData);
+            if (useOled)
+                Disp.UpdateData(SensorsData);
         }
 
         sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
@@ -159,7 +163,8 @@ int main(int argc, char* argv[]) {
     pthread_join(tCommandProcesser, nullptr);
 
     Logger.Close();
-    Disp.Exit();
+    if (useOled)
+        Disp.Exit();
 
     return 0;
 }

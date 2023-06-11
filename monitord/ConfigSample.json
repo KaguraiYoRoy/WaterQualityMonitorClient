@@ -3,5 +3,6 @@
   "Token": "cb3a91b7dba414c826b2358fbbd8a086",
   "UA": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor",
   "Interval": 1800,
-  "CronURL": "http://api.iyoroy.cn/water/v1/public/cron.php"
+  "CronURL": "http://api.iyoroy.cn/water/v1/public/cron.php",
+  "UseOled": true
 }
