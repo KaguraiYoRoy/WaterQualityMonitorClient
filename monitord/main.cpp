@@ -12,6 +12,7 @@
 #include <curl/curl.h>
 #include <json/json.h>
 
+#include "DisplayOled.h"
 #include "Log.h"
 #include "clipp.h"
 
@@ -19,6 +20,7 @@
 #define DEFAULT_INTERVAL    1800
 
 Log Logger;
+DisplayOled Disp;
 pthread_t tUploadTimer, tCommandProcesser;
 std::string Configfile, Logfile;
 std::string URLCron, URLUpload;
@@ -27,10 +29,7 @@ bool isExit;
 int SerialFd;
 int Interval;
 
-struct _SENSORS_DATA {
-    double WaterTemp, LM35, PH, Turbidity;
-    int TDS;
-}SensorsData;
+_SENSORS_DATA SensorsData;
 
 static void SigHandler(int sig);
 void* UploadTimer(void*);
@@ -77,6 +76,13 @@ int main(int argc, char* argv[]) {
     }
     Token = JsonConfigRoot["Token"].asString();
 
+
+    if (!JsonConfigRoot.isMember("CronURL")) {
+        std::cout << "FATAL: \"CronURL\" doesn't set in Config File!\nHave you logged in yet?" << std::endl;
+        return 0;
+    }
+    URLCron = JsonConfigRoot["CronURL"].asString();
+
     UA = JsonConfigRoot.isMember("UA") ? JsonConfigRoot["UA"].asString() : DEFAULT_UA;
     Interval = JsonConfigRoot.isMember("Interval") ? JsonConfigRoot["Interval"].asInt() : DEFAULT_INTERVAL;
 
@@ -90,6 +96,7 @@ int main(int argc, char* argv[]) {
     pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
     SerialFd = serialOpen("/dev/ttyS5", 115200);
+    Disp.Init("/dev/i2c-3");
 
     Json::Value JsonCronRoot;
     CURL* mCurl = curl_easy_init();
@@ -124,11 +131,12 @@ int main(int argc, char* argv[]) {
         }
         else {
             Logger.WriteLog(INFO, "Read Sensors data:" + strSerialData);
-            SensorsData.WaterTemp = JsonConfigRoot["Values"]["WaterTemp"].asDouble();
-            SensorsData.TDS = JsonConfigRoot["Values"]["TDS"].asInt();
-            SensorsData.LM35 = JsonConfigRoot["Values"]["LM35"].asDouble();
-            SensorsData.PH = JsonConfigRoot["Values"]["PH"].asDouble();
-            SensorsData.Turbidity = JsonConfigRoot["Values"]["Turbidity"].asDouble();
+            SensorsData.WaterTemp = JsonCronRoot["Values"]["WaterTemp"].asDouble();
+            SensorsData.TDS = JsonCronRoot["Values"]["TDS"].asInt();
+            SensorsData.LM35 = JsonCronRoot["Values"]["LM35"].asDouble();
+            SensorsData.PH = JsonCronRoot["Values"]["PH"].asDouble();
+            SensorsData.Turbidity = JsonCronRoot["Values"]["Turbidity"].asDouble();
+            Disp.UpdateData(SensorsData);
         }
 
         sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
@@ -147,10 +155,11 @@ int main(int argc, char* argv[]) {
 
     Logger.WriteLog(INFO, "Program exiting. Please wait...");
 
-    Logger.Close();
-
     pthread_join(tUploadTimer, nullptr);
     pthread_join(tCommandProcesser, nullptr);
+
+    Logger.Close();
+    Disp.Exit();
 
     return 0;
 }
@@ -191,6 +200,7 @@ void* UploadTimer(void*) {
         ElapsedTime += 10;
         if (ElapsedTime < Interval)
             continue;
+        ElapsedTime = 0;
         sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f", Token.c_str(),
             SensorsData.WaterTemp,
             SensorsData.TDS,
@@ -211,7 +221,7 @@ void* UploadTimer(void*) {
 
 void* CommandProcesser(void*) {
     while (!isExit) {
-
+        sleep(10);
     }
     return 0;
 }

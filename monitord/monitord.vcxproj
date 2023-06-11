@@ -75,12 +75,14 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="DisplayOled.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlockQueue.h" />
     <ClInclude Include="clipp.h" />
+    <ClInclude Include="DisplayOled.h" />
     <ClInclude Include="Log.h" />
   </ItemGroup>
   <ItemGroup>
