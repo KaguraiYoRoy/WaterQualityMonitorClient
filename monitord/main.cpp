@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
     pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
     SerialFd = serialOpen("/dev/ttyS5", 115200);
+    ReadSerial("g");
     if(useOled)
         Disp.Init("/dev/i2c-3");
 
