@@ -99,8 +99,12 @@ int main(int argc, char* argv[]) {
 
     SerialFd = serialOpen("/dev/ttyS5", 115200);
     ReadSerial("g");
-    if(useOled)
-        Disp.Init("/dev/i2c-3");
+    if (useOled) {
+        int ret = Disp.Init("/dev/i2c-3");
+        if (!ret) {
+            Logger.WriteLog(ERROR, "Failed to open display");
+        }
+    }
 
     Json::Value JsonCronRoot;
     CURL* mCurl = curl_easy_init();
