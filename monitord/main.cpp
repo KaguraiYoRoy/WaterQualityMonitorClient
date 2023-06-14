@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <assert.h>
+#include <mutex>
 
 #include <wiringPi.h>
 #include <wiringSerial.h>
@@ -19,13 +20,16 @@
 #define DEFAULT_UA          "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor"
 #define DEFAULT_INTERVAL    1800
 #define DEFAULT_USE_OLED    true
+#define DEFAULT_OLED_VCC    2
 
 Log Logger;
 DisplayOled Disp;
+CURL* mCurl;
 pthread_t tUploadTimer, tCommandProcesser;
 std::string Configfile, Logfile;
 std::string URLCron, URLUpload;
 std::string Token, UA;
+std::mutex CurlLock;
 bool isExit, useOled;
 int SerialFd;
 int Interval;
@@ -107,8 +111,8 @@ int main(int argc, char* argv[]) {
     }
 
     Json::Value JsonCronRoot;
-    CURL* mCurl = curl_easy_init();
     CURLcode CurlRes;
+    mCurl = curl_easy_init();
     std::string szbuffer, strSerialData;
     char bufferPost[1024];
     bool isGetSensorsSuccess;
@@ -146,12 +150,14 @@ int main(int argc, char* argv[]) {
             SensorsData.Turbidity = JsonCronRoot["Values"]["Turbidity"].asDouble();
             if (useOled)
                 Disp.UpdateData(SensorsData);
-        }
+        } 
 
         sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
+        CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, bufferPost);
         CurlRes = curl_easy_perform(mCurl);
+        CurlLock.unlock();
         if (CurlRes != CURLE_OK) {
             Logger.WriteLog(ERROR, "Failed to get cron task!");
             continue;
@@ -190,20 +196,7 @@ void* UploadTimer(void*) {
     int ElapsedTime = 0;
     char bufferPost[1024];
     std::string szbuffer;
-    CURL* mCurl = curl_easy_init();
     CURLcode CurlRes;
-    curl_easy_setopt(mCurl, CURLOPT_USERAGENT, UA.c_str());
-    curl_easy_setopt(mCurl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(mCurl, CURLOPT_CAINFO, "cacert.pem");
-    curl_easy_setopt(mCurl, CURLOPT_MAXREDIRS, 5);
-    curl_easy_setopt(mCurl, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt(mCurl, CURLOPT_TIMEOUT, 30L);
-    curl_easy_setopt(mCurl, CURLOPT_CONNECTTIMEOUT, 10L);
-    curl_easy_setopt(mCurl, CURLOPT_FAILONERROR, 1L);
-    curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, curl_default_callback);
-    curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
-    curl_easy_setopt(mCurl, CURLOPT_URL, URLUpload.c_str());
-    curl_easy_setopt(mCurl, CURLOPT_POST, 1L);
 
     while (!isExit) {
         sleep(10);
@@ -217,10 +210,11 @@ void* UploadTimer(void*) {
             SensorsData.LM35,
             SensorsData.PH,
             SensorsData.Turbidity);
-
+        CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, bufferPost);
         CurlRes = curl_easy_perform(mCurl);
+        CurlLock.unlock();
         if (CurlRes != CURLE_OK) {
             Logger.WriteLog(ERROR, "Upload Failed!");
             continue;
