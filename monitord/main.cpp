@@ -176,8 +176,10 @@ int main(int argc, char* argv[]) {
 
     pthread_join(tUploadTimer, nullptr);
     pthread_join(tCommandProcesser, nullptr);
-    if (useOled)
+    if (useOled) {
         Disp.Exit();
+        digitalWrite(DEFAULT_OLED_VCC, LOW);
+    }
 
     Logger.Close();
 
