@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
         sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
         CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
-        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, bufferPost);
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, strlen(bufferPost));
         CurlRes = curl_easy_perform(mCurl);
         CurlLock.unlock();
         if (CurlRes != CURLE_OK) {
@@ -216,7 +216,7 @@ void* UploadTimer(void*) {
             SensorsData.Turbidity);
         CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
-        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, bufferPost);
+        curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, strlen(bufferPost));
         CurlRes = curl_easy_perform(mCurl);
         CurlLock.unlock();
         if (CurlRes != CURLE_OK) {
