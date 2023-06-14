@@ -104,6 +104,9 @@ int main(int argc, char* argv[]) {
     SerialFd = serialOpen("/dev/ttyS5", 115200);
     ReadSerial("g");
     if (useOled) {
+        wiringPiSetup();
+        pinMode(DEFAULT_OLED_VCC, OUTPUT);
+        digitalWrite(DEFAULT_OLED_VCC, HIGH);
         int ret = Disp.Init("/dev/i2c-3");
         if (!ret) {
             Logger.WriteLog(ERROR, "Failed to open display");
