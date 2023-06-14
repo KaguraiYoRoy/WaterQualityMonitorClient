@@ -101,12 +101,13 @@ int main(int argc, char* argv[]) {
     pthread_create(&tUploadTimer, NULL, UploadTimer, NULL);
     pthread_create(&tCommandProcesser, NULL, CommandProcesser, NULL);
 
+    wiringPiSetup();
     SerialFd = serialOpen("/dev/ttyS5", 115200);
     ReadSerial("g");
     if (useOled) {
-        wiringPiSetup();
         pinMode(DEFAULT_OLED_VCC, OUTPUT);
         digitalWrite(DEFAULT_OLED_VCC, HIGH);
+        sleep(1);
         int ret = Disp.Init("/dev/i2c-3");
         if (!ret) {
             Logger.WriteLog(ERROR, "Failed to open display");
