@@ -166,10 +166,10 @@ int main(int argc, char* argv[]) {
 
     pthread_join(tUploadTimer, nullptr);
     pthread_join(tCommandProcesser, nullptr);
-
-    Logger.Close();
     if (useOled)
         Disp.Exit();
+
+    Logger.Close();
 
     return 0;
 }
