@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
     curl_global_init(CURL_GLOBAL_ALL);
     curl_easy_setopt(mCurl, CURLOPT_USERAGENT, UA.c_str());
     curl_easy_setopt(mCurl, CURLOPT_SSL_VERIFYHOST, 0L);
-    curl_easy_setopt(mCurl, CURLOPT_CAINFO, "cacert.pem");
+    curl_easy_setopt(mCurl, CURLOPT_SSL_VERIFYPEER, false);
     curl_easy_setopt(mCurl, CURLOPT_MAXREDIRS, 5);
     curl_easy_setopt(mCurl, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(mCurl, CURLOPT_TIMEOUT, 30L);
