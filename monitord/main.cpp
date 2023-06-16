@@ -177,6 +177,11 @@ int main(int argc, char* argv[]) {
             Logger.WriteLog(ERROR, "Remote information parse error!");
             continue;
         }
+        if (!JsonCronRoot.isMember("result"))
+            Logger.WriteLog(WARN, "Remote returned null.");
+        else if (JsonCronRoot["result"].asInt() != 0)
+            Logger.WriteLog(WARN, "Cron remote returned error:" + JsonCronRoot["msg"].asString());
+        else Logger.WriteLog(INFO, "Cron result:" + JsonCronRoot["msg"].asString());
     }
 
     Logger.WriteLog(INFO, "Program exiting. Please wait...");
@@ -211,6 +216,7 @@ void* UploadTimer(void*) {
     std::string szbuffer;
     CURLcode CurlRes;
     Json::Value JsonUploadRoot;
+    Json::Reader JsonReader;
 
     while (!isExit) {
         sleep(10);
@@ -237,6 +243,12 @@ void* UploadTimer(void*) {
             Logger.WriteLog(ERROR, "Upload Failed!");
             continue;
         }
+        if (!JsonReader.parse(szbuffer, JsonUploadRoot) || !JsonUploadRoot.isMember("result")) 
+            Logger.WriteLog(WARN, "No upload result.");
+        else if (JsonUploadRoot["result"].asInt() != 0)
+            Logger.WriteLog(WARN, "Upload remote returned error:" + JsonUploadRoot["msg"].asString());
+        else Logger.WriteLog(INFO, "Upload result:" + JsonUploadRoot["msg"].asString());
+
     }
     return 0;
 }
