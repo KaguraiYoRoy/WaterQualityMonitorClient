@@ -88,6 +88,12 @@ int main(int argc, char* argv[]) {
     }
     URLCron = JsonConfigRoot["CronURL"].asString();
 
+    if (!JsonConfigRoot.isMember("UploadURL")) {
+        std::cout << "FATAL: \"UploadURL\" doesn't set in Config File!\nHave you logged in yet?" << std::endl;
+        return 0;
+    }
+    URLUpload = JsonConfigRoot["UploadURL"].asString();
+
     UA = JsonConfigRoot.isMember("UA") ? JsonConfigRoot["UA"].asString() : DEFAULT_UA;
     Interval = JsonConfigRoot.isMember("Interval") ? JsonConfigRoot["Interval"].asInt() : DEFAULT_INTERVAL;
     useOled = JsonConfigRoot.isMember("UseOled") ? JsonConfigRoot["UseOled"].asBool() : DEFAULT_USE_OLED;
@@ -130,7 +136,6 @@ int main(int argc, char* argv[]) {
     curl_easy_setopt(mCurl, CURLOPT_CONNECTTIMEOUT, 10L);
     curl_easy_setopt(mCurl, CURLOPT_FAILONERROR, 1L);
     curl_easy_setopt(mCurl, CURLOPT_WRITEFUNCTION, curl_default_callback);
-    curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
     curl_easy_setopt(mCurl, CURLOPT_URL, URLCron.c_str());
     curl_easy_setopt(mCurl, CURLOPT_POST, 1L);
 
@@ -158,6 +163,8 @@ int main(int argc, char* argv[]) {
 
         sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
         CurlLock.lock();
+        curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
+        curl_easy_setopt(mCurl, CURLOPT_URL, URLCron.c_str());
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, strlen(bufferPost));
         CurlRes = curl_easy_perform(mCurl);
@@ -200,9 +207,10 @@ static void SigHandler(int sig) {
 
 void* UploadTimer(void*) {
     int ElapsedTime = 0;
-    char bufferPost[1024];
+    char bufferPost[1024]; 
     std::string szbuffer;
     CURLcode CurlRes;
+    Json::Value JsonUploadRoot;
 
     while (!isExit) {
         sleep(10);
@@ -210,13 +218,17 @@ void* UploadTimer(void*) {
         if (ElapsedTime < Interval)
             continue;
         ElapsedTime = 0;
-        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f", Token.c_str(),
+        szbuffer = "";
+        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f", 
+            Token.c_str(),
             SensorsData.WaterTemp,
             SensorsData.TDS,
             SensorsData.LM35,
             SensorsData.PH,
             SensorsData.Turbidity);
         CurlLock.lock();
+        curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
+        curl_easy_setopt(mCurl, CURLOPT_URL, URLUpload.c_str());
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDS, bufferPost);
         curl_easy_setopt(mCurl, CURLOPT_POSTFIELDSIZE, strlen(bufferPost));
         CurlRes = curl_easy_perform(mCurl);

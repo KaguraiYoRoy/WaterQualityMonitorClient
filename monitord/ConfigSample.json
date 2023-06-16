@@ -1,8 +1,9 @@
 {
-  "LogFile": "monitor.log", //Set Log output file here
-  "Token": "cb3a91b7dba414c826b2358fbbd8a086",
+  "LogFile": "monitor.log",
+  "Token": "c133739b0956eae18fe02224f18972b3", 
   "UA": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0.1 QualityMonitor",
   "Interval": 1800,
-  "CronURL": "http://api.iyoroy.cn/water/v1/public/cron.php",
+  "CronURL": "http:\/\/api.iyoroy.cn\/water\/v1\/public\/cron.php",
+  "UploadURL": "http:\/\/api.iyoroy.cn\/water\/v1\/public\/upload.php",
   "UseOled": true
 }
