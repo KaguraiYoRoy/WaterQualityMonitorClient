@@ -10,15 +10,12 @@
 #include <cstring>
 #include <iostream>
 
+#include "monitord.h"
+
 extern "C" {
 	#include "oled.h"
 	#include "font.h"
 }
-
-struct _SENSORS_DATA {
-	double WaterTemp, LM35, PH, Turbidity;
-	int TDS;
-};
 
 class DisplayOled
 {

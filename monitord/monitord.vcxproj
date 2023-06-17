@@ -84,6 +84,7 @@
     <ClInclude Include="clipp.h" />
     <ClInclude Include="DisplayOled.h" />
     <ClInclude Include="Log.h" />
+    <ClInclude Include="monitord.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ConfigSample.json" />
