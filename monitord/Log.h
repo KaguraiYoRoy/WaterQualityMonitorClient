@@ -4,6 +4,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <iostream>
+#include <mutex>
 #include <pthread.h>
 
 #include "BlockQueue.h"
@@ -23,6 +24,7 @@ private:
 	BlockQueue<LogData> LogQueue;
 	pthread_t tWriterThread;
 	std::ofstream LogFileStream;
+	std::mutex LogQueueLock;
 	std::string LogFileName;
 	bool isWriteFile, isExit;
 	std::string GetTime();

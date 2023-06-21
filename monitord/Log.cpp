@@ -91,5 +91,7 @@ void Log::Close() {
 }
 
 void Log::WriteLog(int Level, std::string LogStr) {
+	LogQueueLock.lock();
 	LogQueue.Put({ GetTime(),LogStr,Level });
+	LogQueueLock.unlock();
 }
