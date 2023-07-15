@@ -208,13 +208,14 @@ void* UploadTimer(void*) {
             continue;
         ElapsedTime = 0;
         szbuffer = "";
-        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f", 
+        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f&BatVoltage=%f", 
             Token.c_str(),
             SensorsData.WaterTemp,
             SensorsData.TDS,
             SensorsData.LM35,
             SensorsData.PH,
-            SensorsData.Turbidity);
+            SensorsData.Turbidity,
+            SensorsData.BatVoltage);
         CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
         curl_easy_setopt(mCurl, CURLOPT_URL, URLUpload.c_str());
