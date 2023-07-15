@@ -8,13 +8,15 @@ void* DisplayOled::DisplayThread(void* vParam)
 		sprintf(buf, "Core Temp: %.2f C   ", pClass->Data.LM35);
 		oled_putstrto(&(pClass->disp), 0, 0, buf);
 		sprintf(buf, "TDS: %d   ", pClass->Data.TDS);
-		oled_putstrto(&(pClass->disp), 0, 13, buf);
+		oled_putstrto(&(pClass->disp), 0, 10, buf);
 		sprintf(buf, "Water Temp: %.2f C   ", pClass->Data.WaterTemp);
-		oled_putstrto(&(pClass->disp), 0, 26, buf);
+		oled_putstrto(&(pClass->disp), 0, 20, buf);
 		sprintf(buf, "PH: %.2f   ", pClass->Data.PH);
-		oled_putstrto(&(pClass->disp), 0, 39, buf);
+		oled_putstrto(&(pClass->disp), 0, 30, buf);
 		sprintf(buf, "Turbidity: %.2f   ", pClass->Data.Turbidity);
-		oled_putstrto(&(pClass->disp), 0, 52, buf);
+		oled_putstrto(&(pClass->disp), 0, 40, buf);
+		sprintf(buf, "Battery: %.2fv   ", pClass->Data.BatVoltage);
+		oled_putstrto(&(pClass->disp), 0, 50, buf);
 		oled_send_buffer(&(pClass->disp));
 		sleep(10);
 	}

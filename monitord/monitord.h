@@ -20,6 +20,6 @@
 #define DEFAULT_OLED_VCC    2
 
 struct _SENSORS_DATA {
-	double WaterTemp, LM35, PH, Turbidity;
+	double WaterTemp, LM35, PH, Turbidity, BatVoltage;
 	int TDS;
 };

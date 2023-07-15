@@ -139,6 +139,7 @@ int main(int argc, char* argv[]) {
             SensorsData.LM35 = JsonCronRoot["Values"]["LM35"].asDouble();
             SensorsData.PH = JsonCronRoot["Values"]["PH"].asDouble();
             SensorsData.Turbidity = JsonCronRoot["Values"]["Turbidity"].asDouble();
+            SensorsData.BatVoltage = JsonCronRoot["Values"]["BatteryVoltage"].asDouble();
             if (useOled)
                 Disp.UpdateData(SensorsData);
         } 
