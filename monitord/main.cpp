@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     auto cli = (
         clipp::value("Config file", Configfile),
         clipp::option("-l", "--log") & clipp::value("log file", Logfile)
-        );
+        );  
 
     if (!clipp::parse(argc, argv, cli)) {
         std::cout << clipp::make_man_page(cli, argv[0]);
@@ -144,7 +144,12 @@ int main(int argc, char* argv[]) {
                 Disp.UpdateData(SensorsData);
         } 
 
-        sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b&batvoltage=%f", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess, SensorsData.BatVoltage);
+        sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b&batvoltage=%f",
+            Token.c_str(),
+            0,
+            SensorsData.LM35,
+            isGetSensorsSuccess,
+            SensorsData.BatVoltage);
         CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
         curl_easy_setopt(mCurl, CURLOPT_URL, URLCron.c_str());
