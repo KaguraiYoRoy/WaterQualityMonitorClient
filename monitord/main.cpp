@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
                 Disp.UpdateData(SensorsData);
         } 
 
-        sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess);
+        sprintf(bufferPost, "token=%s&tasks=%d&temp=%f&sensors=%b&batvoltage=%f", Token.c_str(), 0, SensorsData.LM35, isGetSensorsSuccess, SensorsData.BatVoltage);
         CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
         curl_easy_setopt(mCurl, CURLOPT_URL, URLCron.c_str());
@@ -208,14 +208,13 @@ void* UploadTimer(void*) {
             continue;
         ElapsedTime = 0;
         szbuffer = "";
-        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f&BatVoltage=%f", 
+        sprintf(bufferPost, "token=%s&WaterTemp=%f&TDS=%d&LM35=%f&PH=%f&Turbidity=%f", 
             Token.c_str(),
             SensorsData.WaterTemp,
             SensorsData.TDS,
             SensorsData.LM35,
             SensorsData.PH,
-            SensorsData.Turbidity,
-            SensorsData.BatVoltage);
+            SensorsData.Turbidity);
         CurlLock.lock();
         curl_easy_setopt(mCurl, CURLOPT_WRITEDATA, &szbuffer);
         curl_easy_setopt(mCurl, CURLOPT_URL, URLUpload.c_str());
@@ -230,7 +229,7 @@ void* UploadTimer(void*) {
         if (!JsonReader.parse(szbuffer, JsonUploadRoot) || !JsonUploadRoot.isMember("result")) 
             Logger.WriteLog(WARN, "No upload result.");
         else if (JsonUploadRoot["result"].asInt() != 0)
-            Logger.WriteLog(WARN, "Upload remote returned error:" + JsonUploadRoot["msg"].asString());
+            Logger.WriteLog(ERROR, "Upload remote returned error:" + JsonUploadRoot["msg"].asString());
         else Logger.WriteLog(INFO, "Upload result:" + JsonUploadRoot["msg"].asString());
 
     }
