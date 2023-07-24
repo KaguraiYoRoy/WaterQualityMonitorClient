@@ -83,6 +83,11 @@ int main(int argc, char* argv[]) {
     Logger.OpenFile(Logfile);
     Logger.WriteLog(INFO, "Water Quality MonitorDaemon starting...");
 
+    std::ofstream writepid;
+    writepid.open("pid", std::ios::out);
+    writepid << getpid();
+    writepid.close();
+
     signal(SIGINT, SigHandler);
     isExit = false;
 
@@ -173,6 +178,8 @@ int main(int argc, char* argv[]) {
     }
 
     Logger.WriteLog(INFO, "Program exiting. Please wait...");
+
+    unlink("pid");
 
     pthread_join(tUploadTimer, nullptr);
     pthread_join(tCommandProcesser, nullptr);
