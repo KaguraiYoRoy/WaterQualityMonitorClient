@@ -1,7 +1,10 @@
-﻿#include <cstdio>
+﻿#include <iostream>
+#include <curl/curl.h>
+#include <json/json.h>
+#include "clipp.h"
 
 int main()
 {
-    printf("%s 向你问好!\n", "updater");
+
     return 0;
 }
