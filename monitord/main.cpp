@@ -89,6 +89,7 @@ int main(int argc, char* argv[]) {
     writepid.close();
 
     signal(SIGINT, SigHandler);
+    signal(SIGTERM, SigHandler);
     isExit = false;
 
     pthread_create(&tUploadTimer, NULL, UploadTimer, NULL);
@@ -196,6 +197,7 @@ int main(int argc, char* argv[]) {
 static void SigHandler(int sig) {
     switch (sig)
     {
+    case SIGTERM:
     case SIGINT: {
         isExit = true;
         break;
